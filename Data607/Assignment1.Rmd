@@ -1,0 +1,78 @@
+---
+title: "DATA607-Assignment1"
+author: "N Nedd"
+date: "February 8, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("RCurl")
+library(RCurl)
+#install.packages("plyr")
+library(plyr)
+```
+
+#Load Dataset
+
+```{r load-dataset, eval = TRUE}
+location <- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+
+mushroomData <- getURL(location)
+mushroomDF <-  read.csv(text=mushroomData,header=F,sep=",")
+head(mushroomDF)
+```
+
+#Extract relevant columns
+
+**The columns corresponding to cap-color, odor, gill-color, spore-print-color will be selected.  Since the first column is the indicator of poisonous/edible this will translate to columns 1,4,6,10,21
+
+```{r extract-cols, eval = TRUE}
+mushroomDF <- mushroomDF[,c(1,4,6,10,21)]
+str(mushroomDF)
+```
+
+#Change column names:
+
+```{r change-colnames, eval = TRUE}
+colnames(mushroomDF) <- c("edibility", "cap-color", "odor", "gill-color","spore-print-color")
+head(mushroomDF)
+```
+#change letters to descriptive names
+
+**According to the data description found at the following link: (https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.names) the abbreviations are as follows:**
+
+1. cap-color: brown=n,buff=b,cinnamon=c,gray=g,green=r,pink=p,purple=u,red=e,white=w,yellow=y
+2. odor: almond=a,anise=l,creosote=c,fishy=y,foul=f,musty=m,none=n,pungent=p,spicy=s
+3. gill-color: black=k,brown=n,buff=b,chocolate=h,gray=g,green=r,orange=o,pink=p,purple=u,red=e,white=w,yellow=y
+4. spore-print-color: black=k,brown=n,buff=b,chocolate=h,green=r,orange=o,purple=u,white=w,yellow=y
+
+
+```{r descriptive-values, eval = TRUE}
+mushroomDF$edibility <- revalue(mushroomDF$edibility, c("e" = "edible", "p" = "poisonous"))
+mushroomDF$`cap-color` <- revalue(mushroomDF$`cap-color`,c("n" = "brown", "b" = "buff", "c" = "cinnamon",
+                                                           "g" = "gray", "r" = "green", "p" = "pink",
+                                                           "u" = "purple", "e" = "red", "w" = "white",
+                                                           "y" = "yellow"))
+mushroomDF$odor<- revalue(mushroomDF$odor, c("a" = "almond", "l" = "anise", "c" = "creosote",
+                                                           "y" = "fishy", "f" = "foul", "m" = "musty",
+                                                           "n" = "none", "p" = "pungent", "s" = "spicy"))
+
+mushroomDF$`gill-color`<- revalue(mushroomDF$`gill-color`, c("k" = "black", "n" = "brown", "b" = "buff", 
+                                                             "h" = "chocolate", "g" = "gray", "r" = "green",                                                              "o" = "orange", "p" = "pink", "u" = "purple", 
+                                                             "e" = "red", "w" = "white",
+                                                             "y" = "yellow"))
+mushroomDF$`spore-print-color` <- revalue(mushroomDF$`spore-print-color`, 
+                                                            c("k" = "black", "n" = "brown", "b" = "buff", 
+                                                             "h" = "chocolate", "r" = "green",                                                                            "o" = "orange", "u" = "purple", "w" = "white",                                                               "y" = "yellow"))
+```
+
+#Display details of transformed data frame
+
+```{r display-dataset,eval = TRUE}
+str(mushroomDF)
+
+head(mushroomDF)
+```
+
+
