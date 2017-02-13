@@ -1,0 +1,57 @@
+---
+title: "DATA607-Assignment2"
+author: "N Nedd"
+date: "February 12, 2017"
+output: html_document
+---
+
+#Assignment 2
+
+Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates, imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5. Take the results (observations) and store them in a SQL database. Load the information into an R dataframe.
+Your deliverables should include your SQL scripts and your R Markdown code, posted to GitHub.
+
+This is by design a very open ended assignment. A variety of reasonable approaches are acceptable. You can (and should) blank out your SQL password if your solution requires it; otherwise, full credit requires that your code is "reproducible," with the assumption that I have the same database server and R software.
+
+You may work in a small group.
+
+Inspirational reading?: http://www.cnet.com/news/top-10-movie-recommendation-engines/
+
+#Introduction
+
+The assignment made use of imaginary friends to compile the data.  The submission includes an sql file as well as this document.  It assumes that MySQL was loaded and the sql file run before the code of this document is run.
+
+#Setup R and install packages to be used
+
+if("xtable" %in% rownames(installed.packages()) == FALSE) {install.packages("xtable")}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if("RMySQL" %in% rownames(installed.packages()) == FALSE) {install.packages("RMySQL")}
+library(RMySQL)
+```
+
+#Make Connection to MySQL
+
+```{r connecttomysql, eval = TRUE}
+ratingsdb = dbConnect(MySQL(), user='data607nn', password='password', dbname='data607Assignment2nn', host='localhost')
+```
+
+
+#Run query to select data from database
+
+```{r querydb, eval = TRUE}
+ratingsData <- dbGetQuery(ratingsdb,
+                          "SELECT Reviewers.ReviewerName, Movies.MovieName, Ratings.Rating FROM Ratings
+                          RIGHT JOIN Reviewers
+	                        ON Ratings.Reviewer = Reviewers.ReviewerID
+                          LEFT JOIN Movies
+	                        ON Ratings.Movie = Movies.MovieID
+                          ORDER BY MovieName;")
+```
+                          
+#Aggregate the data
+```{r aggregateData, eval = TRUE}
+aggregate(Rating ~ MovieName, data = ratingsData, FUN=mean)
+```
+
+
+
