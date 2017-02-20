@@ -1,0 +1,155 @@
+---
+title: "Assignment-3"
+author: "N Nedd"
+date: "February 19, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+#Assignment
+
+![Questions](week3_problems.jpg)
+
+#Setup Packages
+
+```{r setup_packages}
+if("stringr" %in% rownames(installed.packages()) == FALSE) {install.packages("stringr")}
+library(stringr)
+```
+
+#Question 3
+
+_Extract from example in book_
+
+```{r}
+raw_data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned #Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"   
+
+name <- unlist(str_extract_all(raw_data, "[[:alpha:]., ]{2,}"))
+```
+
+## (a)
+
+```{r rearrange_name, eval=TRUE}
+name2 <- name
+#First names
+for (index in 1:length(name2))
+{
+  #Search and extract abbreviated first names
+  if (str_detect(name[index], "[A-Z]\\.")){name2[index] <- str_extract(name[index], "[A-Z]\\.")}
+  #Search for and extract where the where first name is written last as in Simpson, Homer
+  if(str_detect(name[index], "\\, [A-Za-z]+$")){name2[index] <- str_extract(name[index], "[A-Za-z]+$")}
+  #Search for and extract where first name is written first.
+  if(str_detect(name[index], "\\b[[:alpha:]]+ \\b")){name2[index] <- str_extract(name[index],"\\b[[:alpha:]]+ ")}
+}
+#Remove spaces in firstname
+name2 <- str_trim(name2)
+
+#Last Names
+name3 <- name
+for (index in 1:length(name3))
+{
+  #Extract those last names that are written first.
+  if (str_detect(name[index], "^\\b[[:alpha:]]+\\,"))
+    {name3[index] <- str_extract(name[index], "^\\b[[:alpha:]]+\\b")}
+  else
+    #Extract those last names that are written as the last word
+    {name3[index] <- str_extract(name[index], "[A-Za-z]+$")}
+}
+
+#Combine first and last names separated by space
+rearranged_name <- str_c(name2, name3, sep = " ")
+rearranged_name
+
+```
+
+## (b)
+A title is denoted by at least 2 word characters followed by a fullstop
+
+```{r character_has_title, eval = TRUE}
+has_title <- str_detect(name, "\\w{2,}\\.")
+has_title
+```
+
+## (c)
+
+A second name will be assumed to be middle name (comes between the first and last name).
+
+```{r second_name, eval=TRUE}
+name4 <- name
+for (index in 1:length(name))
+{
+  #Eliminate those names with only one space - indicates only first and last name.
+  if ((str_count(name[index], "\\s")) == 1)
+  {
+    name4[index] <- FALSE
+  }
+  #Eliminate those names with Titles (which is not a second name)
+  else if  (str_detect(name[index], "\\w{2,}\\."))
+  {
+    name4[index] <- FALSE
+  }
+  #Anything left is considered to have a second name
+  else
+    name4[index] <- TRUE
+}
+name4 <- as.logical(name4)
+name4
+```
+
+#Question 4
+
+##(a)
+
+The expression refers to any number of consecutive digits followed immediately by a dollar sign ('$').  Any spaces, letters or punctuation marks are not considered
+
+```{r 4a, eval = TRUE}
+unlist(str_extract_all("675 837$ 30,9834$ dgag 699393 $", "[0-9]+\\$"))
+str_extract("592$", "[0-9]+\\$")
+```
+
+## (b)
+
+The expression refers to a word that consists of 1 to 4 lower case letters
+
+```{r 4b, eval = TRUE}
+unlist(str_extract_all("Mary had a little lamb, his fleece was white as snow.","\\b[a-z]{1,4}\\b" ))
+#The words fleece, little and white all have more than 4 letters, while Mary has a capital letter
+unlist(str_extract_all("a cat in a hat", "\\b[a-z]{1,4}\\b"))
+```
+
+## (c)
+The expression refers to any lenght of text followed by .txt.  .txt must be the last characters in the string.  Basically returns filenames with a 'txt' extension.
+
+```{r 4c, eval = TRUE}
+unlist(str_extract_all("marveltxt", ".*?\\.txt$"))
+unlist(str_extract_all("marvel.txt", ".*?\\.txt$"))
+
+```
+
+## (d)
+The expression refers to 2 digits followed by a / followed by 2 digits followed by / followed by four digits.  Similar to the year if written in mm/dd/yyyy or dd/mm/yyyy format.  This sequence can be located in any part of the string.
+
+```{r 4d, eval = TRUE}
+unlist(str_extract_all("The due date for this assignment date is 19/02/2017", "\\d{2}/\\d{2}/\\d{4}"))
+```
+
+## (e)
+The expression refers a '<' followed by any number of characters then '>' followed by any number of characters followed by '<' then any number of characters then a '/' followed by a recall of the the characters between the first '<' and '>' then finally '>'.  This is the pattern of a snippet of HTML Code - open tag, some text, then closing tag.
+
+```{r 4e, eval = TRUE}
+unlist(str_extract_all("<H1>DATA 607 is fun!</H1>", "<(.+?)>.+?</\\1>"))
+
+```
+
+
+# Extra Credit (Question 9)
+
+
+```{r decode, eval=TRUE}
+secret <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+
+message <- unlist(str_extract_all(secret, "[A-Z]|[[:punct:]]"))
+cat(str_c(message, collapse = ""))
+```
+
