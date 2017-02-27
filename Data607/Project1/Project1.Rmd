@@ -1,0 +1,256 @@
+---
+title: "Data 607 - Project 1"
+author: "N Obieyisi and N Nedd"
+date: "February 26, 2017"
+output: html_document
+---
+
+#Setup packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if("stringr" %in% rownames(installed.packages()) == FALSE) {install.packages("stringr")}
+library(stringr)
+
+```
+
+#Read in Data
+
+```{r readin, eval = TRUE, warning = FALSE}
+raw_data <- scan("https://raw.githubusercontent.com/NNedd/CUNYMSDA/master/Data607/Project1/tournamentinfo.txt", what = "character", skip = 4,sep = "|")
+head(raw_data, 23)
+
+tourn_all <- "https://raw.githubusercontent.com/NNedd/CUNYMSDA/master/Data607/Project1/tournamentinfo.txt"
+
+tlines <- readLines(tourn_all)
+```
+
+#Format data into data frame
+For examination of the data the first record starts in row 1 and ends in row 23 (the 23rd row being ------)
+Therefore the records will start in the following rows: 1, 24, 47, 70, etc. 
+
+
+```{r makeDF, eval = TRUE}
+format_data <- NULL  #setup data frame
+i <- 1
+while( i < length(raw_data)) {
+  Number <- as.numeric(raw_data[i])  
+  Name <- raw_data[i+1]
+  Total<- as.numeric(raw_data[i+2])
+  Round1 <- as.numeric(str_extract(raw_data[i+3], "[[:digit:]]+"))
+  Round2 <- as.numeric(str_extract(raw_data[i+4], "[[:digit:]]+"))
+  Round3 <- as.numeric(str_extract(raw_data[i+5], "[[:digit:]]+"))
+  Round4 <- as.numeric(str_extract(raw_data[i+6], "[[:digit:]]+"))
+  Round5 <- as.numeric(str_extract(raw_data[i+7], "[[:digit:]]+"))
+  Round6 <- as.numeric(str_extract(raw_data[i+8], "[[:digit:]]+"))
+  Round7 <- as.numeric(str_extract(raw_data[i+9], "[[:digit:]]+"))
+  Player_state <- raw_data[i+11]
+  
+  ranking_info <- str_replace_all(raw_data[i+12], " ","")
+  player_rank <- as.numeric(str_replace(str_extract(ranking_info, "[:][[:digit:]]{3,4}"), ":", ""))
+  
+  format_data<- rbind(format_data, data.frame(Number, Name, Total, Round1, Round2, Round3, Round4, Round5, Round6, Round7, Player_state, player_rank))
+  i <- i +23
+  
+}
+
+head(format_data)
+```
+
+
+#Calculate Average Pre-tournament Rating of Opponents
+```{r averages, eval = TRUE}
+Rowlen <-nrow(format_data)
+i <- 1
+for (i in 1:Rowlen )
+{
+  opponents <- as.numeric(format_data[i,c(4:10)]) #store the opponent playerIds 
+  
+  Avg_counter <- 0
+  Sum <- 0
+  for (j in 1:7)
+  {
+    
+    #Ensure to perform average only for the correct number of games played
+    if(is.na(format_data[opponents[j],12]) == FALSE ) 
+    {
+      Sum <- Sum + format_data[opponents[j],12] 
+      
+      Avg_counter <- Avg_counter + 1
+    }
+    
+  }
+  
+  Avg_Pre_chess_rating <- Sum/Avg_counter
+  
+  format_data[i,13] <-Avg_Pre_chess_rating
+  
+
+  
+}
+```
+
+#Clean Up dataframe for output
+
+```{r clean-up, eval = TRUE}
+#Select only needed columns
+col_index <- c(2,11,3,12,13)
+tournament_data <- format_data[,col_index]
+
+#Cleanup column names
+colnames(tournament_data) <- c("Player's Name", "Player's State", "Total Number of Points", "Player's Pre Rating", "Average Pre Chess Rating of Opponents")
+
+#Cleanup data
+tournament_data[,1] <- str_trim(tournament_data[,1], side = "both")
+tournament_data[,2] <- str_trim(tournament_data[,2], side = "both")
+tournament_data[,5] <- round(tournament_data[,5])
+
+
+```
+
+#Create CSV
+
+```{r output-csv, eval = TRUE}
+#write to csv
+write.table(tournament_data, file = "tournamentData.csv",row.names=FALSE, na="",col.names=TRUE, sep=",")
+
+```
+
+#Calcuate for each player, number of wins, draws and loss
+
+##Collect Win, loss, draw data
+```{r}
+
+
+
+all <- c(seq(1,length(tlines), by=1)) #all row numbers
+skip <- c(seq(1,length(tlines), by=3)) #row numbers to skip
+sub_rows <- !(all %in% skip) #filter out rows to skip from all rows
+tourn_all_chess <- tlines[c(sub_rows)]
+
+tourn_all_chess_list <-str_split(string=tourn_all_chess,pattern="[|]", n = Inf, simplify = FALSE)
+
+n<-length(tourn_all_chess)
+tourn_all_chess_df <- data.frame(matrix(unlist(tourn_all_chess_list), nrow=n, byrow=T),stringsAsFactors=FALSE)
+
+n <- nrow(tourn_all_chess_df ) #rows of unstructured df
+r1 <- seq(2,n,2) #row sequence of attributes to be pivoted to columns
+r2 <- seq(1,n-1,2) #row sequence of attributes to be kept as rows
+tourn_all_sub <- tourn_all_chess_df[r2,] #subset of data frame per player name
+
+
+for (i in 1:10)
+{
+ tourn_all_sub<- cbind(tourn_all_sub,tourn_all_chess_df[r1,i]) #append 
+ #pivotted rows to columns of the tourn_all df
+
+}
+
+#Select only needed columns
+col_index <- c(1:10, 12:13)
+tourn_all_data <- tourn_all_sub[,col_index]
+
+
+#set row 1 as column names and delete the row
+colnames(tourn_all_data) <- tourn_all_data[1,]
+tourn_all_data <- tourn_all_data[-1,]
+
+
+Row_no <- nrow(tourn_all_data)
+
+stage_str <-  vector(mode="character", length=Row_no)
+
+for (i in 1:Row_no)
+{
+  stage_str[i] <- paste (tourn_all_data[i, 4], tourn_all_data[i, 5],   tourn_all_data[i, 6],tourn_all_data[i, 7],tourn_all_data[i, 8],tourn_all_data[i, 9],tourn_all_data[i, 10],sep = " ", collapse = NULL)
+
+}
+
+tourn_all_data[, 13] <-
+str_count(stage_str, '[W]')
+
+
+tourn_all_data[, 14] <-
+str_count(stage_str, '[D]')
+
+tourn_all_data[, 15] <-
+str_count(stage_str, '[L]')
+
+
+
+colnames(tourn_all_data) <- c("Pair Number", "Player Name", "Total", "Round 1", "Round 2", "Round 3", "Round 4", "Round 5", "Round 6", "Round 7", "Player State", "Player Pre-Ranking","Number of Wins", "Number of Draws","Number of Loses")
+
+#View(tourn_all_data)
+```
+
+
+
+#Pre vs Post Tournament Rankings
+
+##Collect Post Tournament Rankings
+```{r post-rankings, eval = TRUE}
+extra_data <- integer(0)
+j <- 1
+k <- 1
+
+while( j < length(raw_data)) {
+
+  postranking_info <- str_replace_all(raw_data[j+12], " ","")
+  post_rank <- as.numeric(str_replace(str_extract(postranking_info, "[>][[:digit:]]{3,4}"), ">", ""))
+  extra_data[k] <- post_rank
+  k <- k + 1
+  j <- j +23
+} 
+
+newtournamentData <- tournament_data
+newtournamentData[ , "Post Ratings"] <- extra_data
+
+```
+
+
+
+##Scatterplot show pre vs post torunament ratings
+
+```{r scatter-plot, eval = TRUE}
+plot(newtournamentData$`Player's Pre Rating`, newtournamentData$`Post Ratings`)
+```
+
+
+The scatterplot shows that for the most part there is positive correlation between the pre and post tournament rankings - as expected.
+
+
+
+## Add number of wins, losses, and draws to dataframe
+
+```{r}
+newtournamentData[ , c('Number of Wins','Number of Draws', 'Number of Loses')] <- tourn_all_data[,c('Number of Wins','Number of Draws', 'Number of Loses')]
+
+```
+
+
+#Ranking players with most wins, draws and loss 
+
+```{r}
+
+
+head(newtournamentData[order(-newtournamentData$`Number of Wins`),c(1,7)])
+
+
+head(newtournamentData[order(-newtournamentData$`Number of Draws`),c(1,8)])
+
+
+head(newtournamentData[order(-newtournamentData$`Number of Loses`),c(1,9)])
+```
+#Histogram of number wins 
+
+
+```{r}
+hist(newtournamentData$`Number of Wins`)
+```
+#Histogram of number Draws
+```{r}
+hist(newtournamentData$`Number of Draws`)
+```
+#Histogram of number Loses
+```{r}
+hist(newtournamentData$`Number of Loses`)
+```
