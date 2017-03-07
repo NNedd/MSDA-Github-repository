@@ -312,6 +312,13 @@ Ames.  Now you'll try to estimate the mean home price.
 -   Take a random sample of size 50 from `price`. Using this sample, what is 
     your best point estimate of the population mean?
 
+```{r sample_price, eval = TRUE}
+price_Samp <- sample(price, 50)
+mean(price_Samp)
+```
+
+
+
 -   Since you have access to the population, simulate the sampling 
     distribution for $\bar{x}_{price}$ by taking 5000 samples from the 
     population of size 50 and computing 5000 sample means.  Store these means 
