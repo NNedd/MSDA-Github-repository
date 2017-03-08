@@ -1,11 +1,11 @@
 ---
-title: 'Foundations for statistical inference - Sampling distributions'
+title: "Foundations for statistical inference - Sampling distributions"
 output:
+  pdf_document: default
   html_document:
     css: ./lab.css
     highlight: pygments
     theme: cerulean
-  pdf_document: default
 ---
 
 In this lab, we investigate the ways in which the statistics from a random 
@@ -314,9 +314,11 @@ Ames.  Now you'll try to estimate the mean home price.
 
 ```{r sample_price, eval = TRUE}
 price_Samp <- sample(price, 50)
-mean(price_Samp)
+mean_smp_price <- mean(price_Samp)
+mean_smp_price
 ```
 
+My best estimate of the population mean is `r signif(mean_smp_price,3)`
 
 
 -   Since you have access to the population, simulate the sampling 
@@ -326,6 +328,19 @@ mean(price_Samp)
     shape of this sampling distribution. Based on this sampling distribution, 
     what would you guess the mean home price of the population to be? Finally, 
     calculate and report the population mean.
+    
+```{r samp-price, eval=TRUE}
+sample_means50 <- rep(NA, 5000)
+
+for(i in 1:5000){
+  samp_price <- sample(price, 50)
+  sample_means50[i] <- mean(samp_price)
+}
+
+hist(sample_means50, breaks = 20)
+
+```
+**The distribution is bell-shaped (normal)
 
 -   Change your sample size from 50 to 150, then compute the sampling 
     distribution using the same method as above, and store these means in a 
@@ -334,9 +349,37 @@ mean(price_Samp)
     size of 50.  Based on this sampling distribution, what would you guess to 
     be the mean sale price of homes in Ames?
 
+```{r samp-price150, eval=TRUE}
+sample_means150 <- rep(NA, 5000)
+
+for(i in 1:5000){
+  samp_price <- sample(price, 150)
+  sample_means150[i] <- mean(samp_price)
+}
+par(mfrow = c(2, 1))
+hist(sample_means50, breaks = 20)
+hist(sample_means150, breaks = 20)
+
+```
+
+The shape of the sample_means150 distribution is also bell shaped, similarily to the sample_means50 distribution.
+
+I would guess that the mean price is approximately $180,000
+
 -   Of the sampling distributions from 2 and 3, which has a smaller spread?  If
     we're concerned with making estimates that are more often close to the 
     true value, would we prefer a distribution with a large or small spread?
+    
+```{r spread, eval = TRUE}
+sd50 <- sd(sample_means50)
+sd150 <- sd(sample_means150)
+if (sd50 < sd150){smaller <- "sample_means50"}
+if (sd50 == sd150){smaller <- "equal spread"}
+if (sd50 > sd150) {smaller <- "sample_means150"}
+```
+The sampling distribution with the smaller spread is `r smaller`.
+I would prefer a distribution with a smaller spread since it would mean that the values are closer together and thus closer to the mean.
+
 
 <div id="license">
 This is a product of OpenIntro that is released under a [Creative Commons 
